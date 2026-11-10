@@ -95,6 +95,22 @@ Routes registered by the framework or packages can't get the middleware in your 
 
 The method and action ensure the mode is applied to the correct route, even when a package update changes its routes or a route name is reused. The method is the HTTP method (e.g. `POST`), and the action is the controller and method (e.g. `Laravel\Fortify\Http\Controllers\PasswordController@update`) or, for closure routes, the file defining the closure (e.g. `vendor/laravel/boost/src/BoostServiceProvider.php`). Wildcards can be used to simplify them, e.g. `Laravel\Fortify\Http\Controllers\*`. Entries not matching any route are skipped, so presets and entries for packages that aren't installed have no effect. Custom entries replace the ones of the presets for the same route and method.
 
+### Requiring the primary region inside a request
+
+Some code of a read route can only run in the primary region, e.g. filling a cache that is stored in the replicated database or calling a system that is only reachable from there. `MultiRegion::requirePrimary()` does nothing in the primary region and replays the current request at the primary region when called in a replica region:
+
+```php
+use Tpetry\MultiRegion\MultiRegion;
+
+$prices = Cache::get("prices:{$customer->id}");
+
+if ($prices === null) {
+    MultiRegion::requirePrimary();
+
+    $prices = Cache::remember("prices:{$customer->id}", 3600, fn () => $erp->prices($customer));
+}
+```
+
 ### Testing that every route uses multi-region middleware
 
 A forgotten `multiRegionRead()`, `multiRegionWrite()` or `noMultiRegion()` on a route can lead to stale data. An architecture test can catch them. Add the `ExpectsRoutes` trait to your tests in `tests/Pest.php`:

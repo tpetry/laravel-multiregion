@@ -8,6 +8,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\PostgresConnection;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Tpetry\MultiRegion\Facades\CommitId;
 use Tpetry\MultiRegion\Facades\Manager;
 
@@ -27,6 +28,20 @@ class MultiRegion
     public static function hasCaughtUp(): bool
     {
         return Manager::hasCaughtUp();
+    }
+
+    /**
+     * Replay the current request at the primary region when this instance is not part of it.
+     *
+     * @throws HttpResponseException
+     */
+    public static function requirePrimary(): void
+    {
+        if (Manager::isPrimary()) {
+            return;
+        }
+
+        throw new HttpResponseException(Manager::addServedByHeader(Manager::replayAtPrimary()));
     }
 
     /**
