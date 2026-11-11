@@ -1,5 +1,11 @@
 # Release Notes
 
+## [v4.2.0](https://github.com/tpetry/laravel-multiregion/compare/4.1.0...4.2.0) - 2026-11-11
+
+### Added
+
+- `MultiRegion::requirePrimary()` to force replay a request at the primary region when currently in a replica region.
+
 ## [v4.1.0](https://github.com/tpetry/laravel-multiregion/compare/4.0.0...4.1.0) - 2026-11-09
 
 ### Added
