@@ -7,6 +7,7 @@ namespace Tpetry\MultiRegion\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Tpetry\MultiRegion\Exceptions\ReplayAtPrimaryException;
 use Tpetry\MultiRegion\Facades\Manager;
 
 class MultiRegionRead
@@ -18,10 +19,15 @@ class MultiRegionRead
     {
         Manager::cleanupOldCommitIds();
 
-        if (Manager::isPrimary() || Manager::hasCaughtUp()) {
-            return Manager::addServedByHeader($next($request));
+        if (! Manager::isPrimary() && ! Manager::hasCaughtUp()) {
+            return Manager::addServedByHeader(Manager::replayAtPrimary());
         }
 
-        return Manager::addServedByHeader(Manager::replayAtPrimary());
+        $response = $next($request);
+        if (($response->exception ?? null) instanceof ReplayAtPrimaryException) {
+            return Manager::addServedByHeader(Manager::replayAtPrimary());
+        }
+
+        return Manager::addServedByHeader($response);
     }
 }
